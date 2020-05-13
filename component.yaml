@@ -1,0 +1,17 @@
+platform: Android
+buildPlatform:
+displayName: Android Metadata
+inputs:
+- key: "AC_REPOSITORY_DIR"
+  isRequired: true
+  title: Repository Path
+  description: Repository Path description.
+  helpText:
+outputs:
+- key: "AC_METADATA_OUTPUT_PATH"
+  description: Metadata output file description.
+  helpText:
+processFilename: ruby
+processArguments: '%AC_STEP_TEMP%/main.rb'
+files:
+- "main.rb"
