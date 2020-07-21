@@ -77,7 +77,7 @@ def extract_modules(dRepo_path, settings_files, build_files)
 end
 
 def runCommand(command)
-    puts "@[command] #{command}"
+    puts "@@[command] #{command}"
     status = nil
     stdout_str = nil
     stderr_str = nil
@@ -101,7 +101,7 @@ def get_build_variants(repo_path, aModule)
     buildVariants = []
     runCommand("cd #{repo_path} && chmod +x ./gradlew")
 
-    puts "@[command] ./gradlew :#{aModule}:signingReport"
+    puts "@@[command] ./gradlew :#{aModule}:signingReport"
     Open3.popen3("./gradlew :#{aModule}:signingReport", :chdir=>repo_path) do |stdin, stdout, stderr, wait_thr|
         unless wait_thr.value.success?
             err = stderr.read
