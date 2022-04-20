@@ -77,43 +77,41 @@ def extract_modules(dRepo_path, settings_files, build_files)
 end
 
 def runCommand(command)
-    puts "@@[command] #{command}"
     status = nil
-    stdout_str = nil
-    stderr_str = nil
-
+    result = ""
+    puts "@@[command] #{command}"
     Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
-        stdout.each_line do |line|
-            puts line
+      stdout_thread = Thread.new do
+        while (line = stdout.gets)
+          result.concat(line)
+          puts line
         end
-        stdout_str = stdout.read
-        stderr_str = stderr.read
-        status = wait_thr.value
+      end
+  
+      stderr_thread = Thread.new do
+        while (line = stderr.gets)
+          result.concat(line)
+          puts line
+        end
+      end
+  
+      stdout_thread.join
+      stderr_thread.join
+      status = wait_thr.value
+      exit status.exitstatus unless status.success?
+      return result
     end
-
-    unless status.success?
-        puts stderr_str
-        raise stderr_str
-    end
-end
-
+  end
+  
 def get_build_variants(repo_path, aModule) 
     buildVariants = []
-    runCommand("cd #{repo_path} && chmod +x ./gradlew")
+    result = runCommand("cd #{repo_path} && chmod +x ./gradlew && ./gradlew :#{aModule}:signingReport")
 
-    puts "@@[command] ./gradlew :#{aModule}:signingReport"
-    Open3.popen3("./gradlew :#{aModule}:signingReport", :chdir=>repo_path) do |stdin, stdout, stderr, wait_thr|
-        unless wait_thr.value.success?
-            err = stderr.read
-            puts err
-            exit -1
-        end
-        while line = stdout.gets
-            if line.start_with?("Variant") 
-                puts line
-                buildVariants << line.split(/:/).map { |word|  word.strip }.select do |word| 
-                    not word.downcase.include?("variant") and  not word.match(/(.*UnitTest.*)|(.*AndroidTest.*)/)
-                end
+    result.each_line do |line|
+        if line.start_with?("Variant") 
+            puts line
+            buildVariants << line.split(/:/).map { |word|  word.strip }.select do |word| 
+                not word.downcase.include?("variant") and  not word.match(/(.*UnitTest.*)|(.*AndroidTest.*)/)
             end
         end
     end
